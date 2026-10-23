@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/model.ts", "src/store.ts", "src/markdown.ts", "src/web.ts", "src/http.ts"]
+}

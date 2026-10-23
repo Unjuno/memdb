@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.env*
+!.env.example
+.superpowers/
+__pycache__/
+*.pyc
+*.sqlite*
+*.db
+.DS_Store

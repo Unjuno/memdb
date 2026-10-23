@@ -1,0 +1,29 @@
+name: MemDB CI
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install
+      - name: Core and actual SDK transport tests
+        run: npm test
+      - name: Worker bundle dry run (no deployment)
+        run: npx wrangler deploy --dry-run
+      - name: Preserve resolved dependency lock
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-lock
+          path: package-lock.json
+          if-no-files-found: ignore
