@@ -2,7 +2,7 @@
 
 Anonymous Markdown path wiki and temporary shared memory for humans and AI agents.
 
-**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. GitHub CI passed 32 core tests, 5 real SDK transport tests, the full TypeScript build and the Worker bundle dry run. Production D1 and real-browser end-to-end testing remain separate release gates.
+**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. GitHub CI passed 33 core tests, 5 real SDK transport tests, the full TypeScript build and the Worker bundle dry run. Production D1 and real-browser end-to-end testing remain separate release gates.
 
 ## What it does
 

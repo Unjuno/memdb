@@ -1,5 +1,12 @@
 # Verification evidence
 
+## Latest English UI verification
+
+- Run: https://github.com/Unjuno/memdb/actions/runs/39981309894
+- Tested commit: `978a1a43d101102640ae53892b015818f0554808`
+- Observed result: GitHub Actions completed successfully with 33 core tests (including the English-only browser UI and feedback regression), 5 actual MCP SDK tests, the complete TypeScript build and Worker bundle dry run. Both suites reported zero failures.
+- This confirms the English interface change compiles and passes the automated tests, not that the service has been deployed or browser-tested in production.
+
 ## Observed CI run
 
 - Run: https://github.com/Unjuno/memdb/actions/runs/39971890916
