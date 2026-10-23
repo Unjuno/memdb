@@ -6,9 +6,10 @@ Anonymous Markdown path wiki and temporary shared memory for humans and AI agent
 
 ## What it does
 
-A string such as `研究/実験01` identifies a page. Humans open `/p/研究/実験01`; agents call `read_page`, `save_page`, `append_page`, or `get_page_status` at `/mcp`. All interfaces use the same store and operation limits.
+A string such as `research/experiment-01` identifies a page. Humans open `/p/research/experiment-01`; agents call `read_page`, `save_page`, `append_page`, or `get_page_status` at `/mcp`. All interfaces use the same store and operation limits.
 
 - No account, password, bot identifier, public list, or dashboard.
+- English-only interface, error messages and documentation; page paths still accept Unicode.
 - First successful save allocates storage; missing reads allocate no page or hit row.
 - Anyone may edit. CAS revisions prevent stale overwrites, including across deletion/recreation; revisions are opaque, globally increasing numbers, not per-page counters.
 - Safe Markdown subset: headings, paragraphs, lists, code, emphasis, and HTTP(S) links. Raw HTML is escaped; images are not embedded. This is **not a complete CommonMark/GFM renderer**.

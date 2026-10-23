@@ -17,12 +17,12 @@ function rows(db, table) { return db.sql.prepare(`SELECT * FROM ${table} ORDER B
 
 // Tests are introduced before the implementation; optional imports expose explicit assertions.
 test('validation API exists', () => assert.equal(typeof model.normalizePath, 'function'));
-test('path NFC, Japanese and literal status segments', () => {
-  assert.equal(model.normalizePath('研究/e\u0301/status'), '研究/é/status');
-  for(const key of ['', '/a','a/','a//b','../x','a/./b','a\\b','a\u0000','x%2Fz','a/'.repeat(8)+'b','あ'.repeat(86),'\ud800']) assert.throws(()=>model.normalizePath(key));
+test('path NFC, Unicode and literal status segments', () => {
+  assert.equal(model.normalizePath('cafe\u0301/e\u0301/status'), 'café/é/status');
+  for(const key of ['', '/a','a/','a//b','../x','a/./b','a\\b','a\u0000','x%2Fz','a/'.repeat(8)+'b','€'.repeat(86),'\ud800']) assert.throws(()=>model.normalizePath(key));
 });
 test('URL segments decode exactly once and encoded slash is rejected', () => {
-  assert.equal(model.decodePath('%E7%A0%94%E7%A9%B6/a%3Fb'), '研究/a?b');
+  assert.equal(model.decodePath('caf%C3%A9/a%3Fb'), 'café/a?b');
   for(const key of ['a%2Fb', 'a%252Fb','%ZZ','a/%2e%2e']) assert.throws(()=>model.decodePath(key));
 });
 test('missing reads and status do not allocate storage', async () => {
@@ -30,8 +30,8 @@ test('missing reads and status do not allocate storage', async () => {
   assert.equal((await svc.status('new')).state,'missing'); assert.equal(rows(db,'pages').length,0); assert.equal(rows(db,'page_hits').length,0); db.close();
 });
 test('create and CAS update use UTF-8 bytes; stale saves fail', async () => {
-  const {db,svc}=fixture(); const a=await svc.save('a','あ',0); assert.equal(a.content_bytes,3);
-  assert.equal((await svc.save('a','あい',a.version)).version,2);
+  const {db,svc}=fixture(); const a=await svc.save('a','€',0); assert.equal(a.content_bytes,3);
+  assert.equal((await svc.save('a','€€',a.version)).version,2);
   await rejects(()=>svc.save('a','lost',1),'VERSION_CONFLICT'); assert.equal(rows(db,'usage_quota')[0].used_content_bytes,6); db.close();
 });
 test('empty, oversized, malformed content and versions fail before writes', async () => {
@@ -122,8 +122,26 @@ test('browser shell allocates no page; CSP and no public listing',async()=>{
   assert.match(await res.text(),/textarea/); assert.equal(rows(db,'pages').length,0);
   assert.equal((await http.handleRequest(req('/api/pages'),e)).status,404); db.close();
 });
+test('browser UI and client feedback are English-only', async () => {
+  const db = new LocalD1(), e = env(db);
+  const home = await (await http.handleRequest(req('/'), e)).text();
+  const page = await (await http.handleRequest(req('/p/research/experiment-01'), e)).text();
+  const script = await (await http.handleRequest(req('/assets/app.js'), e)).text();
+  assert.match(home, /<html lang="en">/);
+  assert.match(home, /Open a page/);
+  assert.match(home, /Page path/);
+  assert.match(home, /Anyone can read and edit/);
+  assert.match(page, /Markdown content/);
+  assert.match(page, /Reload \(counts as a read\)/);
+  assert.match(script, /Saved successfully/);
+  assert.match(script, /The page has changed/);
+  for (const content of [home, page, script]) assert.doesNotMatch(content, /[\u3040-\u30ff\u3400-\u9fff]/u);
+  assert.equal(rows(db, 'pages').length, 0);
+  db.close();
+});
+
 test('HTTP create, read, status, append and raw share a literal path',async()=>{
-  const db=new LocalD1(),e=env(db),path='%E7%A0%94%E7%A9%B6/status';
+  const db=new LocalD1(),e=env(db),path='caf%C3%A9/status';
   let res=await http.handleRequest(req('/api/pages/'+path,'PUT',{markdown:'# Test',expected_version:0}),e);
   assert.equal(res.status,201); const page=await res.json();assert.equal(page.version,1);
   res=await http.handleRequest(req('/api/pages/'+path),e);assert.equal((await res.json()).content_md,'# Test');
