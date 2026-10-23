@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Core and actual SDK transport tests
         run: npm test
       - name: Worker bundle dry run (no deployment)

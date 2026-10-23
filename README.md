@@ -2,7 +2,7 @@
 
 Anonymous Markdown path wiki and temporary shared memory for humans and AI agents.
 
-**Development MVP, not a deployed service.** The browser/API/store are implemented and locally tested. The official MCP SDK v2 adapter and Workers configuration are included; see verification status below before treating them as deployment-ready.
+**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. GitHub CI passed 32 core tests, 5 real SDK transport tests, the full TypeScript build and the Worker bundle dry run. Production D1 and real-browser end-to-end testing remain separate release gates.
 
 ## What it does
 
@@ -22,7 +22,7 @@ A string such as `研究/実験01` identifies a page. Humans open `/p/研究/実
 Prerequisites: Node.js 22.16+ and npm. Install dependencies from the registry:
 
 ```sh
-npm install
+npm ci
 npm run db:local
 npm run dev
 ```
@@ -72,11 +72,11 @@ There are no deployment credentials in this repository. Missing limiter bindings
 ## Verification status
 
 - **PASS:** 32 local core/SQL/HTTP/render tests with Node 22.16.0, TypeScript 5.8.3 and SQLite 3.49.1. Includes real transaction rollback, 20 competing CAS updates, 20 appends, freeze and recreation, malformed input, XSS payloads, and origin/rate rejection.
-- **NOT YET VERIFIED:** actual MCP SDK install/build/transport and Wrangler/D1 runtime. Local registry DNS is unavailable; GitHub CI is configured to exercise these, but a workflow definition is not a passing run.
+- **PASS IN GITHUB CI:** full TypeScript build, 5 actual MCP SDK transport tests (legacy initialization plus four tools), and `wrangler deploy --dry-run`. CI used Ubuntu 26.04.1, Node 22.23.3, npm 10.9.9, MCP server/core 2.3.1, Zod 4.6.7, TypeScript 5.8.3 and Wrangler 4.152.0. See [verification evidence](docs/verification.md). Local registry DNS remained unavailable; this result comes from the actual GitHub job, not a local SDK run.
 - **NOT YET VERIFIED:** real-browser end-to-end test; this environment blocked localhost browser navigation administratively.
 - **NOT DEPLOYED:** public endpoint and production D1. Local SQLite is not proof of Cloudflare behavior under network failure or distributed load.
 
-Dependency ranges remain until a verified `package-lock.json` is committed. CI preserves its resolved lock as an artifact. This is an explicit release blocker, not a reproducible production build yet.
+`package-lock.json` records the complete dependency graph used by the successful CI run. It is JSON-equivalent to that run's lock artifact, with whitespace compacted only. Use `npm ci`, not a fresh dependency resolution, for verification. Runtime compatibility and security still need review; a lock file does not establish them.
 
 See [security model](SECURITY.md) and [architecture and decisions](docs/architecture.md).
 
