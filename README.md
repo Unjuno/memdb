@@ -2,7 +2,7 @@
 
 Anonymous Markdown path wiki and temporary shared memory for humans and AI agents.
 
-**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. GitHub CI passed 33 core tests, 5 real SDK transport tests, the full TypeScript build and the Worker bundle dry run. Production D1 and real-browser end-to-end testing remain separate release gates.
+**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. The previous GitHub CI run passed 33 core tests, 5 real SDK transport tests, the full TypeScript build and the Worker bundle dry run. This local worktree additionally passes 43 core/reliability/release-gate tests and four Chromium DOM tests. A new CI job is prepared for a disposable Wrangler/D1 integration smoke, but its result is not verified until the changes are pushed. Production D1 and unrestricted-browser end-to-end testing remain separate release gates.
 
 ## What it does
 
@@ -31,8 +31,12 @@ npm run dev
 Open `http://127.0.0.1:8787/`. The exact origin matters; `localhost` is a different origin under the default configuration. MCP endpoint: `http://127.0.0.1:8787/mcp`.
 
 ```sh
-npm run test:core  # TypeScript + real local SQLite, no external runtime dependencies
-npm test          # also compiles and tests the actual MCP SDK adapter
+npm run test:core  # TypeScript + real local SQLite, now includes reliability + release-gate tests
+npm test           # also compiles and tests the actual MCP SDK adapter
+# Optional Chromium DOM harness, with a local HTTP bridge in restricted environments:
+# pip install -r requirements-browser-tests.txt
+# python -m playwright install chromium
+npm run test:browser
 ```
 
 ## HTTP interfaces
@@ -65,21 +69,23 @@ Do not deploy the placeholder configuration unchanged.
 
 1. Create a D1 database with `npx wrangler d1 create memdb` and put its real ID in `wrangler.jsonc`.
 2. Set `PUBLIC_ORIGIN` to the exact HTTPS production origin; choose rate-limit namespace IDs unused by unrelated Workers.
-3. Run `npx wrangler d1 migrations apply memdb --remote`, then `npm test` and `npx wrangler deploy --dry-run`.
-4. Only after reviewing the tests, security model and provider budget, run `npm run deploy`. No automatic production deployment is configured.
+3. Run the local D1 smoke defined in CI and independently verify against a disposable Cloudflare D1 deployment. Complete the [release checklist](docs/release-checklist.md).
+4. Before production deployment, apply real migrations with `npx wrangler d1 migrations apply memdb --remote`, only after verifying the account and target database.
+5. `npm run deploy` now runs a **fail-closed predeploy check**: it rejects local origins, placeholder D1 IDs/rate namespaces, missing cron and missing explicit operator acknowledgments. This does not configure billing controls. Read the [runbook](docs/runbook.md) first.
+6. Only after reviewing independent security, browser and provider budget evidence, deploy manually. No automatic production deployment is configured.
 
 There are no deployment credentials in this repository. Missing limiter bindings and invalid origins fail closed. Configure provider-level spend/resource limits and private operational monitoring; this project has no public dashboard.
 
 ## Verification status
 
-- **PASS:** 32 local core/SQL/HTTP/render tests with Node 22.16.0, TypeScript 5.8.3 and SQLite 3.49.1. Includes real transaction rollback, 20 competing CAS updates, 20 appends, freeze and recreation, malformed input, XSS payloads, and origin/rate rejection.
+- **PASS LOCALLY IN THIS WORKTREE:** 43 core/SQL/HTTP/reliability/release-gate tests with Node 22.16.0, TypeScript 5.8.3 and SQLite 3.49.1, plus four Chromium DOM/JavaScript tests with a server-backed fetch bridge and a 14-check HTTP/SQLite Policy C smoke. Includes quota/revision invariants across 250 mixed operations, transaction rollback, 20 competing CAS updates, 20 appends, malformed input, XSS payloads, and origin/rate rejection.
 - **PASS IN GITHUB CI:** full TypeScript build, 5 actual MCP SDK transport tests (legacy initialization plus four tools), and `wrangler deploy --dry-run`. CI used Ubuntu 26.04.1, Node 22.23.3, npm 10.9.9, MCP server/core 2.3.1, Zod 4.6.7, TypeScript 5.8.3 and Wrangler 4.152.0. See [verification evidence](docs/verification.md). Local registry DNS remained unavailable; this result comes from the actual GitHub job, not a local SDK run.
-- **NOT YET VERIFIED:** real-browser end-to-end test; this environment blocked localhost browser navigation administratively.
+- **PARTIAL BROWSER VERIFICATION:** real Chromium DOM and JS executed in four tests, but direct localhost navigation is blocked (`ERR_BLOCKED_BY_ADMINISTRATOR`); CSP and full network browser E2E remain unverified.
 - **NOT DEPLOYED:** public endpoint and production D1. Local SQLite is not proof of Cloudflare behavior under network failure or distributed load.
 
 `package-lock.json` records the complete dependency graph used by the successful CI run. It is JSON-equivalent to that run's lock artifact, with whitespace compacted only. Use `npm ci`, not a fresh dependency resolution, for verification. Runtime compatibility and security still need review; a lock file does not establish them.
 
-See [security model](SECURITY.md) and [architecture and decisions](docs/architecture.md).
+See [security model](SECURITY.md), [architecture and decisions](docs/architecture.md), [operator runbook](docs/runbook.md), and [release checklist](docs/release-checklist.md).
 
 ## License
 

@@ -1,0 +1,2 @@
+# Optional development-only dependency; not used by the Worker in production.
+playwright==1.57.0

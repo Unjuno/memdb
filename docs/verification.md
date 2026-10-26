@@ -17,6 +17,15 @@
 - Environment: GitHub-hosted Ubuntu 26.04.1 x64; Node 22.23.3; npm 10.9.9; TypeScript 5.8.3; MCP server/core 2.3.1; Zod 4.6.7; Wrangler 4.152.0.
 - This is functional verification, not a throughput/latency benchmark. Local async contention tests are not distributed load tests.
 
+## Additional local verification (2026-10-26)
+
+- Node.js 22.16.0 + global TypeScript 5.8.3: `npm run test:core` yielded **43/43 PASS** (previous 33 plus additional security, quota, state and release-gate tests).
+- Playwright 1.57.0 with system Chromium: `npm run test:browser` yielded **4/4 PASS**. Hosted Chromium refuses direct localhost navigation; production HTML and client JavaScript were evaluated in Chromium while `fetch` was bridged to the actual local HTTP handler and SQLite D1-shaped adapter. This is DOM/UI integration, not end-to-end browser transport/CSP validation.
+- Seeded HTTP/SQLite Policy C smoke: `MEMDB_TEST_FIXTURE=policy-c` with `MEMDB_SKIP_MCP_SMOKE=1`, **14 checks PASS**. This uses the production router and real SQLite, **not** Cloudflare D1.
+- `npm run check:release` correctly returns a nonzero exit code on checked-in placeholder configuration; deliberate release refusal.
+- `tests/fixtures/policy-c.sql` and the new GitHub CI job are prepared to exercise **real Wrangler local D1**, but were not run here because npm package registry access is blocked. A CI success for this new commit is required before any release claim.
+- `npm run build` and current MCP SDK transport integration were not rerun locally because `npm ci --offline` lacks cached SDK/Wrangler packages. Previous verified GitHub CI success belongs to an **earlier commit**, not the current unpushed worktree.
+
 ## Dependency provenance
 
 The run produced artifact `dependency-lock`, ID `12510110452`.

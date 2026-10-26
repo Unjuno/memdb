@@ -1,4 +1,4 @@
-import { AppError, byteLength, dbError, decodePath, type Env } from './model.js';
+import { AppError, dbError, decodePath, validateMarkdown, type Env } from './model.js';
 import { invokeTool, rate } from './tools.js';
 import { renderMarkdown } from './markdown.js';
 import { CSS, JS, shell } from './web.js';
@@ -63,7 +63,7 @@ export async function handleRequest(request: Request, env: Env, mcp?: McpHandler
     } else if(route==='/api/preview') {
       method(request,['POST']);await rate(env.WRITE_LIMITER,'preview');const body=await jsonBody(request);
       if(typeof body.markdown!=='string')throw new AppError('INVALID_INPUT');
-      if(byteLength(body.markdown)>32768)throw new AppError('PAGE_TOO_LARGE');
+      if(body.markdown) validateMarkdown(body.markdown); // Empty drafts are valid previews, but malformed Unicode is not.
       response=Response.json({html:renderMarkdown(body.markdown)});
     } else if(route.startsWith('/api/pages/')) {
       method(request,['GET','PUT']);const path=decodePath(route.slice(11));

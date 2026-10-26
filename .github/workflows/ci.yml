@@ -3,10 +3,14 @@ on:
   push:
     branches: [main, 'feat/**']
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: memdb-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  test:
+  core:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -14,16 +18,46 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install dependencies
+          cache: npm
+      - name: Install locked dependencies
         run: npm ci
-      - name: Core and actual SDK transport tests
+      - name: Core, quota, release-gate and real MCP SDK transport tests
         run: npm test
       - name: Worker bundle dry run (no deployment)
         run: npx wrangler deploy --dry-run
-      - name: Preserve resolved dependency lock
-        if: always()
-        uses: actions/upload-artifact@v4
+  worker-local-d1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          name: dependency-lock
-          path: package-lock.json
-          if-no-files-found: ignore
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Apply migrations to disposable local D1
+        run: npm run db:local
+      - name: Seed deterministic Policy C test data
+        run: npx wrangler d1 execute memdb --local --file=tests/fixtures/policy-c.sql
+      - name: Run real Wrangler Worker and D1 integration smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler dev --ip 127.0.0.1 --port 8787 > /tmp/memdb-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 45); do
+            if curl --silent --show-error --fail --max-time 2 http://127.0.0.1:8787/ > /dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$worker_pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then cat /tmp/memdb-worker.log; exit 1; fi
+          MEMDB_SMOKE_ORIGIN=http://127.0.0.1:8787 node scripts/worker-smoke.mjs || {
+            cat /tmp/memdb-worker.log
+            exit 1
+          }
