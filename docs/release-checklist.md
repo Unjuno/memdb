@@ -2,7 +2,7 @@
 
 This checklist applies to the **unmerged development pull request**. It is not a claim that a production service is running. Source, UI and documentation remain English-only; Unicode page paths remain supported.
 
-## Completed in this local worktree
+## Completed and verified
 
 - [x] Anonymous path-keyed Markdown, browser editor, preview and raw/API endpoints; no accounts or dashboard.
 - [x] MCP `read_page`, `save_page`, `append_page`, `get_page_status` adapter (existing branch; previously verified with real SDK in GitHub CI).
@@ -11,13 +11,12 @@ This checklist applies to the **unmerged development pull request**. It is not a
 - [x] Seeded 250-operation invariant test with quota and revision assertions.
 - [x] Chromium DOM+JS test with server-backed transport bridge: four scenarios, no direct browser navigation.
 - [x] Local SQLite-backed 14-step HTTP policy smoke using deterministic fixture.
-- [x] CI **configuration** for disposable Wrangler Worker/D1 smoke (not executed from this runtime).
+- [x] CI executed a disposable Wrangler Worker/D1 smoke with **17 HTTP/MCP checks passing**, alongside 43 core tests and 5 actual MCP SDK tests.
 - [x] Fail-closed `npm run deploy` guard and operator runbook. Provider budget approval is a human acknowledgment only.
+- [x] Hardening changes pushed to the existing `feat/mvp` PR, verified on GitHub Actions: https://github.com/Unjuno/memdb/actions/runs/40323368922
 
 ## Remaining before public deployment
 
-- [ ] Commit/push this local worktree into the existing GitHub `feat/mvp` PR, after diff review. Connector write capability is unavailable in this session.
-- [ ] See passing GitHub CI **for the new commit**, including real Wrangler/Miniflare D1 smoke.
 - [ ] Validate behavior on an actual Cloudflare D1 account and run failure/rollback/load checks; local SQLite and Miniflare are not substitutes.
 - [ ] Perform unrestricted HTTPS browser navigation, CSP, and cross-origin tests on a disposable staging service.
 - [ ] Test against a modern 2026-07-28 MCP client (legacy 2025-11-25 already verified).

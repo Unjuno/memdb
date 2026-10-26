@@ -2,7 +2,7 @@
 
 Anonymous Markdown path wiki and temporary shared memory for humans and AI agents.
 
-**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. The previous GitHub CI run passed 33 core tests, 5 real SDK transport tests, the full TypeScript build and the Worker bundle dry run. This local worktree additionally passes 43 core/reliability/release-gate tests and four Chromium DOM tests. A new CI job is prepared for a disposable Wrangler/D1 integration smoke, but its result is not verified until the changes are pushed. Production D1 and unrestricted-browser end-to-end testing remain separate release gates.
+**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. [GitHub CI](https://github.com/Unjuno/memdb/actions/runs/40323368922) passed **43 core/reliability/release-gate tests, 5 MCP SDK tests, TypeScript build, Worker bundle dry run and 17 live HTTP/MCP checks against disposable local Wrangler+D1**. Four Chromium DOM tests also pass locally with a server-backed fetch bridge. Production D1 and unrestricted HTTPS browser end-to-end testing remain separate release gates.
 
 ## What it does
 
@@ -79,7 +79,7 @@ There are no deployment credentials in this repository. Missing limiter bindings
 ## Verification status
 
 - **PASS LOCALLY IN THIS WORKTREE:** 43 core/SQL/HTTP/reliability/release-gate tests with Node 22.16.0, TypeScript 5.8.3 and SQLite 3.49.1, plus four Chromium DOM/JavaScript tests with a server-backed fetch bridge and a 14-check HTTP/SQLite Policy C smoke. Includes quota/revision invariants across 250 mixed operations, transaction rollback, 20 competing CAS updates, 20 appends, malformed input, XSS payloads, and origin/rate rejection.
-- **PASS IN GITHUB CI:** full TypeScript build, 5 actual MCP SDK transport tests (legacy initialization plus four tools), and `wrangler deploy --dry-run`. CI used Ubuntu 26.04.1, Node 22.23.3, npm 10.9.9, MCP server/core 2.3.1, Zod 4.6.7, TypeScript 5.8.3 and Wrangler 4.152.0. See [verification evidence](docs/verification.md). Local registry DNS remained unavailable; this result comes from the actual GitHub job, not a local SDK run.
+- **PASS IN GITHUB CI (2026-10-26):** 43 core tests, full TypeScript build, 5 actual MCP SDK transport tests (legacy initialization plus four tools), `wrangler deploy --dry-run`, and 17 HTTP/MCP smoke checks against the local Wrangler+D1 Worker. CI used Ubuntu 26.04.1, Node 22.23.3, npm 10.9.9, MCP server/core 2.3.1, Zod 4.6.7, TypeScript 5.8.3 and Wrangler 4.152.0. See [verification evidence](docs/verification.md). Local registry DNS remained unavailable; this result comes from the actual GitHub job, not a local SDK run.
 - **PARTIAL BROWSER VERIFICATION:** real Chromium DOM and JS executed in four tests, but direct localhost navigation is blocked (`ERR_BLOCKED_BY_ADMINISTRATOR`); CSP and full network browser E2E remain unverified.
 - **NOT DEPLOYED:** public endpoint and production D1. Local SQLite is not proof of Cloudflare behavior under network failure or distributed load.
 

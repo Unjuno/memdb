@@ -23,8 +23,16 @@
 - Playwright 1.57.0 with system Chromium: `npm run test:browser` yielded **4/4 PASS**. Hosted Chromium refuses direct localhost navigation; production HTML and client JavaScript were evaluated in Chromium while `fetch` was bridged to the actual local HTTP handler and SQLite D1-shaped adapter. This is DOM/UI integration, not end-to-end browser transport/CSP validation.
 - Seeded HTTP/SQLite Policy C smoke: `MEMDB_TEST_FIXTURE=policy-c` with `MEMDB_SKIP_MCP_SMOKE=1`, **14 checks PASS**. This uses the production router and real SQLite, **not** Cloudflare D1.
 - `npm run check:release` correctly returns a nonzero exit code on checked-in placeholder configuration; deliberate release refusal.
-- `tests/fixtures/policy-c.sql` and the new GitHub CI job are prepared to exercise **real Wrangler local D1**, but were not run here because npm package registry access is blocked. A CI success for this new commit is required before any release claim.
-- `npm run build` and current MCP SDK transport integration were not rerun locally because `npm ci --offline` lacks cached SDK/Wrangler packages. Previous verified GitHub CI success belongs to an **earlier commit**, not the current unpushed worktree.
+- `tests/fixtures/policy-c.sql` and the Wrangler+D1 CI job were executed successfully on GitHub Actions (see the verified run below). Local package registry access remains blocked.
+- `npm run build` and MCP SDK integration were not rerun in the local container because package downloads are blocked. Both completed successfully on the pushed GitHub commit.
+
+## Wrangler local D1 CI verification (2026-10-26)
+
+- Run: https://github.com/Unjuno/memdb/actions/runs/40323368922
+- Tested commit: `a81ca150b51ec002250a91cc5d40dc8385dc16ff`
+- `core`: 43 core/reliability/release-gate tests passed, 5 real MCP SDK transport tests passed; TypeScript build and Worker `--dry-run` completed successfully.
+- `worker-local-d1`: migrated a disposable Wrangler local D1 instance, seeded the deterministic Policy C fixture, launched the Worker, and passed **17 HTTP/MCP smoke checks** including a full/eviction/rejection scenario.
+- Both jobs completed successfully (zero test failures). This is local Wrangler/Miniflare D1 verification, **not remote Cloudflare account D1**, real browser HTTPS networking, or a load test.
 
 ## Dependency provenance
 
