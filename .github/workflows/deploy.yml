@@ -1,0 +1,58 @@
+name: Deploy MemDB
+on:
+  workflow_dispatch:
+    inputs:
+      public_writes:
+        description: I accept anonymous public writes and use-driven data deletion
+        required: true
+        default: false
+        type: boolean
+      budget_confirmed:
+        description: I verified the Cloudflare plan, quotas and spending controls
+        required: true
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: memdb-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      MEMDB_DATABASE_ID: ${{ vars.MEMDB_DATABASE_ID }}
+      MEMDB_PUBLIC_ORIGIN: ${{ vars.MEMDB_PUBLIC_ORIGIN }}
+      MEMDB_RATE_NAMESPACE_BASE: ${{ vars.MEMDB_RATE_NAMESPACE_BASE }}
+      MEMDB_APPROVE_PUBLIC_DEPLOY: ${{ inputs.public_writes && 'I_ACCEPT_PUBLIC_ANONYMOUS_WRITES' || '' }}
+      MEMDB_OPERATOR_BUDGET_CONFIRMED: ${{ inputs.budget_confirmed && '1' || '' }}
+    steps:
+      - name: Require main and explicit deployment choices
+        env:
+          SELECTED_REF: ${{ github.ref }}
+        run: |
+          test "$SELECTED_REF" = refs/heads/main
+          test "$MEMDB_APPROVE_PUBLIC_DEPLOY" = I_ACCEPT_PUBLIC_ANONYMOUS_WRITES
+          test "$MEMDB_OPERATOR_BUDGET_CONFIRMED" = 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Generate and validate exact deployment configuration
+        run: npm run configure:production
+      - name: Build the configured Worker without deploying
+        run: npx --no-install wrangler deploy --dry-run --config wrangler.production.json
+      - name: Migrate remote D1 and deploy the validated configuration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing CLOUDFLARE_API_TOKEN secret'; exit 1; }
+          npm run deploy
+      - name: Read-only public HTTPS and MCP smoke
+        run: npm run verify:remote
