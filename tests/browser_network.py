@@ -29,8 +29,8 @@ class NetworkTests(unittest.TestCase):
         cls.p.stop()
 
     def setUp(self):
-        self.context = self.browser.new_context(ignore_https_errors=self.insecure)
-        self.page = self.context.new_page(viewport={'width':1200, 'height':800})
+        self.context = self.browser.new_context(ignore_https_errors=self.insecure, viewport={'width':1200, 'height':800})
+        self.page = self.context.new_page()
         self.path = 'network/' + uuid.uuid4().hex
 
     def tearDown(self):
@@ -40,7 +40,7 @@ class NetworkTests(unittest.TestCase):
         path = path or self.path
         response = self.page.goto(self.origin + '/p/' + quote(path, safe='/'))
         self.assertEqual(response.status, 200)
-        expect(self.page.locator('#status')).not_to_have_text('Loading...')
+        expect(self.page.locator('#status')).to_have_text('This page does not exist yet.')
         return response
 
     def save(self, text):
