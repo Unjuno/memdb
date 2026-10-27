@@ -1,31 +1,30 @@
-# MemDB MVP release checklist
+# Release checklist
 
-This checklist applies to the **unmerged development pull request**. It is not a claim that a production service is running. Source, UI and documentation remain English-only; Unicode page paths remain supported.
+Source readiness and live deployment are separate states. See `docs/ship.md` for the exact operator setup and `docs/release-0.1.0.md` for evidence.
 
-## Completed and verified
+## Implemented and tested
 
-- [x] Anonymous path-keyed Markdown, browser editor, preview and raw/API endpoints; no accounts or dashboard.
-- [x] MCP `read_page`, `save_page`, `append_page`, `get_page_status` adapter (existing branch; previously verified with real SDK in GitHub CI).
-- [x] Transactional Policy C and read-driven lock/deletion, with low-read records retained (SQLite tests).
-- [x] Fail-first regression for invalid Unicode preview input; now validated with the same content rules as saves.
-- [x] Seeded 250-operation invariant test with quota and revision assertions.
-- [x] Chromium DOM+JS test with server-backed transport bridge: four scenarios, no direct browser navigation.
-- [x] Local SQLite-backed 14-step HTTP policy smoke using deterministic fixture.
-- [x] CI executed a disposable Wrangler Worker/D1 smoke with **17 HTTP/MCP checks passing**, alongside 43 core tests and 5 actual MCP SDK tests.
-- [x] Fail-closed `npm run deploy` guard and operator runbook. Provider budget approval is a human acknowledgment only.
-- [x] Hardening changes pushed to the existing `feat/mvp` PR, verified on GitHub Actions: https://github.com/Unjuno/memdb/actions/runs/40323368922
+- [x] English-only browser Markdown view, edit, preview and save; Unicode paths.
+- [x] Anonymous REST and four MCP tools sharing the same rules.
+- [x] Policy C quotas, atomic reclaim/insert, low-read retention, locks and frozen paths.
+- [x] Global revision tokens and conflicting-draft preservation.
+- [x] Same-site and cross-origin request rejection; safe renderer, CSP and input bounds.
+- [x] 49 core tests and 8 actual SDK transport tests, including modern MCP without initialize.
+- [x] 17 live HTTP/MCP checks through local Wrangler/D1.
+- [x] Direct Chromium HTTPS navigation, editing, conflict, Unicode and CSP/origin tests.
+- [x] Audited dependency repair and reproducible lockfile.
+- [x] Exact-config migration/deploy command and manual-only production workflow.
+- [x] English setup, operations, rollback and security guidance.
 
-## Remaining before public deployment
+## Owner-controlled deployment
 
-- [ ] Validate behavior on an actual Cloudflare D1 account and run failure/rollback/load checks; local SQLite and Miniflare are not substitutes.
-- [ ] Perform unrestricted HTTPS browser navigation, CSP, and cross-origin tests on a disposable staging service.
-- [ ] Test against a modern 2026-07-28 MCP client (legacy 2025-11-25 already verified).
-- [ ] Independent code/security review: unauthenticated edits, traffic-induced deletion, bypass paths, resource exhaustion.
-- [ ] Set a provider-enforced spending alert/limit, confirm rate namespace separation, and confirm physical D1 usage headroom.
-- [ ] Create the real D1 database ID, assign an exact HTTPS `PUBLIC_ORIGIN`, and apply migrations to the intended account.
-- [ ] Decide whether to grant an open-source license (public visibility alone is not a license).
-- [ ] Obtain explicit approval for public deployment, merge `feat/mvp` into `main`, and run a final post-deploy smoke in an authorized staging/production environment.
+- [ ] Configure a real D1 database and account-scoped token; keep all tokens out of chat and source control.
+- [ ] Set the four production environment variables in `docs/ship.md`.
+- [ ] Check the actual plan, provider spending controls and private operational monitoring.
+- [ ] Validate remote D1 and public HTTPS on an authorized staging instance. Do not run capacity fixtures on production.
+- [ ] Run Deploy MemDB on a passing main commit and inspect the returned live URL and read-only probes.
+- [ ] Verify recovery and physical database usage with the expected workload before relying on public operation.
 
-## Hard stop conditions
+## Deliberate limits
 
-Do **not** deploy if any secret is checked into the repository, if `PUBLIC_ORIGIN` remains localhost, if D1 UUID or limiter namespaces are placeholders, if core CI/integration checks are red, if billing is unbounded, or if a destructive failure mode has not been reviewed. No manual override of the Policy C requirement is permitted just to make new pages fit.
+An independent security review has not been performed. Source availability is not a license grant, and the owner has not selected a reuse license. Neither prevents local development, but neither should be misrepresented as resolved. No accounts, public index, dashboard, localization or retention guarantee are added.

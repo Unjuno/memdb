@@ -1,92 +1,60 @@
 # MemDB
 
-Anonymous Markdown path wiki and temporary shared memory for humans and AI agents.
+A small anonymous Markdown wiki and temporary shared memory for humans and AI agents.
 
-**Development MVP, not a deployed service.** The browser/API/store and official MCP SDK adapter are implemented. [GitHub CI](https://github.com/Unjuno/memdb/actions/runs/40323368922) passed **43 core/reliability/release-gate tests, 5 MCP SDK tests, TypeScript build, Worker bundle dry run and 17 live HTTP/MCP checks against disposable local Wrangler+D1**. Four Chromium DOM tests also pass locally with a server-backed fetch bridge. Production D1 and unrestricted HTTPS browser end-to-end testing remain separate release gates.
+**The application and release pipeline are implemented. No public service URL has been provisioned by this repository.** See [shipping instructions](docs/ship.md) for the one-time Cloudflare setup. Pushes and merges do not deploy automatically.
 
-## What it does
+## Use a path, not an account
 
-A string such as `research/experiment-01` identifies a page. Humans open `/p/research/experiment-01`; agents call `read_page`, `save_page`, `append_page`, or `get_page_status` at `/mcp`. All interfaces use the same store and operation limits.
+A string such as `research/experiment-01` identifies a page. Humans open `/p/research/experiment-01`; agents use the same path through MCP at `/mcp`. A page is allocated only on its first successful save.
 
-- No account, password, bot identifier, public list, or dashboard.
-- English-only interface, error messages and documentation; page paths still accept Unicode.
-- First successful save allocates storage; missing reads allocate no page or hit row.
-- Anyone may edit. CAS revisions prevent stale overwrites, including across deletion/recreation; revisions are opaque, globally increasing numbers, not per-page counters.
-- Safe Markdown subset: headings, paragraphs, lists, code, emphasis, and HTTP(S) links. Raw HTML is escaped; images are not embedded. This is **not a complete CommonMark/GFM renderer**.
-- High-read pages lock and can be deleted. Cold pages are not deleted just because they are old.
-- **Policy C:** when a new page cannot fit, reclaim at most eight already-eligible hot pages, atomically with creation. If insufficient, delete nothing and return `507 STORAGE_FULL`. Existing-page edits never evict other pages.
+There are no accounts, passwords, bot identifiers, public page directory, dashboard or language switch. The interface, errors and documentation are English. Page paths and content can contain Unicode.
 
-> Public, anonymous and temporary means **no secrecy, ownership, retention, or recovery guarantee**. Never store secrets, personal information or irreplaceable records. Page text is untrusted input, not instructions for AI. An attacker can deliberately trigger reads and hence deletion eligibility.
+Anyone who knows a path can read and change its contents. Paths are identifiers, not passwords. Do not store secrets or irreplaceable records. Page content is untrusted data, not instructions for an agent to follow.
 
-## Local setup
+## Local development
 
-Prerequisites: Node.js 22.16+ and npm. Install dependencies from the registry:
+Use Node.js 22.16.0 or later in the Node 22 line, with npm installed:
 
 ```sh
+git clone https://github.com/Unjuno/memdb.git
+cd memdb
 npm ci
+npm test
 npm run db:local
 npm run dev
 ```
 
-Open `http://127.0.0.1:8787/`. The exact origin matters; `localhost` is a different origin under the default configuration. MCP endpoint: `http://127.0.0.1:8787/mcp`.
+Open `http://127.0.0.1:8787/`. The local MCP endpoint is `http://127.0.0.1:8787/mcp`. These are local addresses, not a deployed service. The checked-in D1 ID and limiter namespaces are placeholders. Production deployment refuses them.
 
-```sh
-npm run test:core  # TypeScript + real local SQLite, now includes reliability + release-gate tests
-npm test           # also compiles and tests the actual MCP SDK adapter
-# Optional Chromium DOM harness, with a local HTTP bridge in restricted environments:
-# pip install -r requirements-browser-tests.txt
-# python -m playwright install chromium
-npm run test:browser
-```
+## Interfaces
 
-## HTTP interfaces
-
-| Method / path | Behavior |
+| Interface | Operation |
 | --- | --- |
-| `GET /` | Path entry form only |
-| `GET /p/<path>` | Browser shell, no page allocation or read count |
-| `GET /api/pages/<path>` | Accepted read; Markdown, safe rendered HTML, revision and state |
-| `PUT /api/pages/<path>` | `{ "markdown": "...", "expected_version": 0 }` creates; returned revision required to replace |
-| `POST /api/append/<path>` | `{ "markdown": "...", "expected_version": 123 }`; version optional for atomic append |
-| `GET /api/status/<path>` | Metadata only, no accepted-read increment |
-| `GET /raw/<path>` | Markdown; counts an accepted read |
-| `POST /api/preview` | Render draft without allocating or counting a page |
-| `/mcp` | Official SDK v2 HTTP adapter, modern protocol plus legacy stateless clients |
+| `/p/<path>` | View, edit, preview and save Markdown |
+| `GET /raw/<path>` | Read Markdown source; counts as a read |
+| `GET /api/pages/<path>` | Read content, rendered HTML and revision |
+| `PUT /api/pages/<path>` | Save `{markdown, expected_version}` |
+| `POST /api/append/<path>` | Append `{markdown, expected_version}` |
+| `GET /api/status/<path>` | Status without increasing the page read count |
+| `/mcp` | MCP HTTP endpoint |
 
-Separate `pages`, `append`, and `status` prefixes are intentional: a key ending in `/status` or `/append` is still a normal page. Paths use NFC, case sensitivity, at most eight segments and 256 UTF-8 bytes. Traversal, controls, backslashes and ambiguous double encodings are rejected.
+MCP tools are `read_page`, `save_page`, `append_page`, and `get_page_status`. Save and append arguments use `path`, `markdown`, and `expected_version`; creating a page uses revision `0`. Read a returned revision rather than assuming a sequence value. Concurrent stale writes are rejected instead of silently overwriting another edit.
 
-## Storage policy
+The SDK is exercised through both legacy 2025-11-25 exchanges and modern 2026-07-28 direct calls with per-request metadata. The modern tests do not establish compatibility with every host application.
 
-Defaults are design choices, not benchmark-derived limits: 32 KiB/page, 128 MiB aggregate Markdown, 10,000 pages. These are **logical** limits, not physical D1 storage limits.
+## Storage policy C
 
-Reads use current plus preceding 23 UTC-hour buckets. At 100 reads, editing locks. After at least 12 hours, below 50 reads permits unlocking. Normal GC deletes pages with at least 300 reads on **each** of the two completed UTC days. Policy C additionally requires a 12-hour existing lock, age of at least 24 hours, 300 reads across at least six distinct hour buckets. Deletion freezes a path for seven days. Cron runs every five minutes, with at most 100 normal deletions per run.
+High-use pages become locked and eventually eligible for deletion. Old, low-use pages are not removed simply because they are old. When a new page exceeds quota, eligible high-use pages can be reclaimed only in the same transaction as the new save. If sufficient capacity cannot be reclaimed, the save is rejected without deleting pages. Deleted paths are frozen for seven days.
 
-Rate limits use shared global/page keys only, not IP/user/bot IDs. Cloudflare's rate limits are approximate **per location**, not a strict worldwide budget. Defaults: 1200 requests/minute/location, 60 reads/status calls per page/minute/location, 10 writes per page/minute/location, 20 creations/minute/location. They reduce load; they do not establish identity or prevent coordinated abuse.
+Default limits are 32 KiB of UTF-8 Markdown per page, 128 MiB total Markdown, and 10,000 pages. Logical limits do not include database indexes, metadata or provider billing. Rate limits are shared by operation/path and use Cloudflare's edge limiter, not authenticated identity or a strict worldwide billing cap. See [architecture](docs/architecture.md) and [operations](docs/runbook.md).
 
-## Deployment gate
+The renderer supports basic headings, lists, code, emphasis and safe links. It does not implement full CommonMark/GFM, tables, images or executable HTML. The editor has no autosave; it preserves a local draft when a save conflicts.
 
-Do not deploy the placeholder configuration unchanged.
+## Verification and deployment
 
-1. Create a D1 database with `npx wrangler d1 create memdb` and put its real ID in `wrangler.jsonc`.
-2. Set `PUBLIC_ORIGIN` to the exact HTTPS production origin; choose rate-limit namespace IDs unused by unrelated Workers.
-3. Run the local D1 smoke defined in CI and independently verify against a disposable Cloudflare D1 deployment. Complete the [release checklist](docs/release-checklist.md).
-4. Before production deployment, apply real migrations with `npx wrangler d1 migrations apply memdb --remote`, only after verifying the account and target database.
-5. `npm run deploy` now runs a **fail-closed predeploy check**: it rejects local origins, placeholder D1 IDs/rate namespaces, missing cron and missing explicit operator acknowledgments. This does not configure billing controls. Read the [runbook](docs/runbook.md) first.
-6. Only after reviewing independent security, browser and provider budget evidence, deploy manually. No automatic production deployment is configured.
+CI checks the core/SQL/HTTP/security rules, actual MCP SDK, local Wrangler+D1, Chromium over real loopback HTTPS, TypeScript build and dependency advisories. It includes 49 core tests, 8 MCP tests, 17 Worker checks and 5 browser-network tests. See the [release evidence](docs/release-0.1.0.md); results are tied to specific commits.
 
-There are no deployment credentials in this repository. Missing limiter bindings and invalid origins fail closed. Configure provider-level spend/resource limits and private operational monitoring; this project has no public dashboard.
+Production uses a manual workflow: validate the exact generated configuration, test, build, migrate remote D1, deploy, then run bounded read-only HTTPS/MCP probes. The owner supplies a Cloudflare token and four environment variables. Missing credentials or unsafe configuration stop the process. See [Ship MemDB](docs/ship.md) and the [release checklist](docs/release-checklist.md).
 
-## Verification status
-
-- **PASS LOCALLY IN THIS WORKTREE:** 43 core/SQL/HTTP/reliability/release-gate tests with Node 22.16.0, TypeScript 5.8.3 and SQLite 3.49.1, plus four Chromium DOM/JavaScript tests with a server-backed fetch bridge and a 14-check HTTP/SQLite Policy C smoke. Includes quota/revision invariants across 250 mixed operations, transaction rollback, 20 competing CAS updates, 20 appends, malformed input, XSS payloads, and origin/rate rejection.
-- **PASS IN GITHUB CI (2026-10-26):** 43 core tests, full TypeScript build, 5 actual MCP SDK transport tests (legacy initialization plus four tools), `wrangler deploy --dry-run`, and 17 HTTP/MCP smoke checks against the local Wrangler+D1 Worker. CI used Ubuntu 26.04.1, Node 22.23.3, npm 10.9.9, MCP server/core 2.3.1, Zod 4.6.7, TypeScript 5.8.3 and Wrangler 4.152.0. See [verification evidence](docs/verification.md). Local registry DNS remained unavailable; this result comes from the actual GitHub job, not a local SDK run.
-- **PARTIAL BROWSER VERIFICATION:** real Chromium DOM and JS executed in four tests, but direct localhost navigation is blocked (`ERR_BLOCKED_BY_ADMINISTRATOR`); CSP and full network browser E2E remain unverified.
-- **NOT DEPLOYED:** public endpoint and production D1. Local SQLite is not proof of Cloudflare behavior under network failure or distributed load.
-
-`package-lock.json` records the complete dependency graph used by the successful CI run. It is JSON-equivalent to that run's lock artifact, with whitespace compacted only. Use `npm ci`, not a fresh dependency resolution, for verification. Runtime compatibility and security still need review; a lock file does not establish them.
-
-See [security model](SECURITY.md), [architecture and decisions](docs/architecture.md), [operator runbook](docs/runbook.md), and [release checklist](docs/release-checklist.md).
-
-## License
-
-No license has been selected. Public visibility does not grant an open-source license.
+No independent security audit, production load test or durable-storage guarantee is claimed. Existing source-license status is unchanged; public repository visibility alone does not grant a reuse license.
