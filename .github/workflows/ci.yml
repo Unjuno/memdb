@@ -61,3 +61,43 @@ jobs:
             cat /tmp/memdb-worker.log
             exit 1
           }
+  browser-https:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: pip install -r requirements-browser-tests.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: npm run db:local
+      - name: Full Chromium HTTPS navigation against disposable Wrangler D1
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler dev --ip 127.0.0.1 --port 8787 --local-protocol https --var PUBLIC_ORIGIN:https://127.0.0.1:8787 > /tmp/memdb-https.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 60); do
+            if curl -ksSf --max-time 2 https://127.0.0.1:8787/ > /dev/null; then ready=1; break; fi
+            if ! kill -0 "$worker_pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then cat /tmp/memdb-https.log; exit 1; fi
+          MEMDB_BASE_URL=https://127.0.0.1:8787 MEMDB_INSECURE_LOOPBACK=1 python tests/browser_network.py || {
+            cat /tmp/memdb-https.log
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-https-evidence
+          path: artifacts/
+          if-no-files-found: ignore

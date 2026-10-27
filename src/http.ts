@@ -20,7 +20,9 @@ function validateOrigin(request: Request, env: Env) {
   if(configured.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(configured.hostname))throw new AppError('CONFIGURATION_ERROR');
   const url=new URL(request.url),origin=request.headers.get('Origin'),host=request.headers.get('Host');
   if(url.origin!==configured.origin || (origin!==null&&origin!==configured.origin) || (host!==null&&host!==configured.host))throw new AppError('ORIGIN_DENIED');
-  if(/^\/(api|raw|mcp)(\/|$)/.test(url.pathname)&&request.headers.get('Sec-Fetch-Site')==='cross-site')throw new AppError('ORIGIN_DENIED');
+  const site=request.headers.get('Sec-Fetch-Site');
+  // A sibling subdomain is not trusted; reads mutate counters and may cause deletion.
+  if(/^\/(api|raw|mcp)(\/|$)/.test(url.pathname)&&site!==null&&!['same-origin','none'].includes(site))throw new AppError('ORIGIN_DENIED');
 }
 async function textBody(request: Request): Promise<string> {
   if(request.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase()!=='application/json')throw new AppError('UNSUPPORTED_MEDIA_TYPE');

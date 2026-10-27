@@ -3,20 +3,30 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22.16.0" },
+  "engines": {
+    "node": ">=22.16.0"
+  },
   "scripts": {
     "dev": "wrangler dev --ip 127.0.0.1",
     "build": "tsc -p tsconfig.json",
-    "test:core": "tsc -p tsconfig.core.json && node --experimental-sqlite --test tests/core.test.mjs tests/reliability.test.mjs tests/release.test.mjs",
-    "test:mcp": "npm run build && node --experimental-sqlite --test tests/mcp.test.mjs",
+    "test:core": "tsc -p tsconfig.core.json && node --experimental-sqlite --test tests/core.test.mjs tests/reliability.test.mjs tests/release.test.mjs tests/security.test.mjs tests/deployment.test.mjs",
+    "test:mcp": "npm run build && node --experimental-sqlite --test tests/mcp.test.mjs tests/mcp-modern.test.mjs",
     "test": "npm run test:core && npm run test:mcp",
     "db:local": "wrangler d1 migrations apply memdb --local",
-    "predeploy": "node scripts/check-release.mjs",
     "check:release": "node scripts/check-release.mjs",
     "test:browser": "python tests/browser_e2e.py",
     "test:worker": "node scripts/worker-smoke.mjs",
-    "deploy": "wrangler deploy"
+    "deploy": "node scripts/deploy.mjs",
+    "configure:production": "node scripts/production-config.mjs",
+    "test:browser:network": "python tests/browser_network.py",
+    "verify:remote": "node scripts/remote-smoke.mjs"
   },
-  "dependencies": { "@modelcontextprotocol/server": "^2.0.0", "zod": "^4.2.0" },
-  "devDependencies": { "typescript": "5.8.3", "wrangler": "^4.0.0" }
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.0.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "wrangler": "^4.0.0"
+  }
 }

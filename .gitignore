@@ -10,3 +10,6 @@ __pycache__/
 *.sqlite*
 *.db
 .DS_Store
+
+wrangler.production.json
+artifacts/
