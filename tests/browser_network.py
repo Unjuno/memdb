@@ -85,7 +85,7 @@ class NetworkTests(unittest.TestCase):
         self.page.keyboard.press('Enter')
         expect(self.page.get_by_role('heading', name='How MEMDB works')).to_be_visible()
         expect(self.page.get_by_text('256 bytes (UTF-8)', exact=False)).to_be_visible()
-        expect(self.page.get_by_text('32 KiB', exact=False)).to_be_visible()
+        expect(self.page.locator('#help').get_by_text('32 KiB', exact=False)).to_be_visible()
         self.assertEqual(self.page.url, self.origin + '/')
         self.assertFalse(any('/api/pages/' in u or '/raw/' in u for u in requests))
         self.page.locator('#help summary').click()
