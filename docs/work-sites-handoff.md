@@ -4,7 +4,7 @@
 
 Deploy **MEMDB** using ChatGPT Work and the user's ChatGPT Sites capability, **not an independently provisioned Cloudflare account**, if Sites hosting is available for the user's account.
 
-Source: `https://github.com/Unjuno/memdb` on the `main` branch, after PR #3 is merged.
+Source: `https://github.com/Unjuno/memdb` on a working branch based on `main`.
 
 ## Non-negotiable product behavior
 
@@ -17,18 +17,15 @@ Source: `https://github.com/Unjuno/memdb` on the `main` branch, after PR #3 is m
 
 ## Required adaptation
 
-The current implementation is a Cloudflare Workers TypeScript application. Storage is D1-shaped SQLite, edge rate-limit bindings are Cloudflare-specific, and maintenance uses scheduled Worker triggers. **Do not assume these APIs exist in ChatGPT Sites or that a direct source upload is sufficient.** Work must inspect the actual Sites runtime, database APIs, permissions, background jobs and MCP exposure before changing or deploying code.
+Sites supports Workers, D1 bindings and a Sites-hosted MCP server. The Sites adapter bundles the existing TypeScript application into a Worker, replaces edge limiters with atomic D1 fixed-window counters, and replaces cron with a persisted five-minute request-triggered maintenance lease. The documented per-Site D1 maximum is 10 GB. MEMDB reserves 20% and sets an 8 GB logical content limit plus 244,140 pages; this reserve is estimated because the database inspection API exposes table names but not physical byte usage. Account-wide storage limits remain plan-dependent.
 
-If Sites supports a compatible persistent database, port only the platform interfaces while retaining the page schema, limit invariants, HTTP/MCP behavior and tests. If scheduled maintenance is unsupported, implement a verified bounded alternative and demonstrate it does not create unbounded cost/latency. Do not silently weaken capacity or abuse controls. Check actual quotas and billable usage; the application's default **128 MiB logical quota** does not automatically become a 10 GB quota just because hosting offers more storage.
+The application keeps the same page schema, Policy C invariants, HTTP/MCP behavior and tests. A deployed Site has an 8 GB logical content ceiling under the documented 10 GB physical maximum; the remaining allowance is reserved for database metadata and indexes. Plan-specific account quotas and exact physical usage still require the owner's Sites settings because the database inspection connector does not expose byte usage.
 
 ## Verification and release
 
-1. Inspect the Sites entitlement and actual persistent storage, public HTTP, MCP and rate-limit capabilities. If any are unavailable, report the blocker; do not invent a deployment URL.
-2. Build a private test site, migrate/initialize its data store, then run creation, edit, preview, conflict, second-key switching and reopening from `/`. Assert the human browser URL remains unchanged.
-3. Exercise the same keys using MCP from an authorized client; verify rate-limit and lock behavior, quota rollback, no page creation on mere view of a missing key, and Unicode encoding.
-4. Test XSS/CSP/cross-site protections and browser UI on real HTTPS. Compare policy outcomes against the upstream test suite and document any platform differences.
-5. Check the actual hosting spend/usage limits and record what the platform can and cannot enforce. Never publish secrets. Public anonymous write and deletion behaviors must be confirmed before release.
-6. Publish only after verification. Report the **observed** site URL, MCP connection details (including whether external clients are supported), test results, and outstanding risks.
+See [`sites-verification-2026-10-28.md`](sites-verification-2026-10-28.md) for the observed results. A private version was deployed, the D1 schema and 8 GB logical quota were confirmed, and the Sites-generated ChatGPT MCP plugin successfully saved and read a Unicode-keyed page. The Site access setting is now `public` and its deployment succeeded at `https://memdb-unjuno-test.unjuno.chatgpt.site`.
+
+The clean browser still displayed a Sites sign-in page after public deployment. Public anonymous UI behavior is therefore unresolved; do not claim the release is fully available to unauthenticated visitors. The ChatGPT plugin was exercised, but direct external MCP client interoperability, live browser edits, mobile layout, public HTTPS security headers and physical D1 usage remain unverified.
 
 ## Upstream references
 

@@ -7,6 +7,7 @@ export class LocalD1 {
     this.sql = new DatabaseSync(':memory:');
     this.sql.exec(readFileSync(new URL('../migrations/0001_initial.sql', import.meta.url), 'utf8'));
     this.sql.exec(readFileSync(new URL('../migrations/0002_revision_clock.sql', import.meta.url), 'utf8'));
+    this.sql.exec(readFileSync(new URL('../migrations/0003_sites_runtime.sql', import.meta.url), 'utf8'));
     this.beforeBatch = undefined;
   }
   prepare(sql) {

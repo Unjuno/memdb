@@ -25,6 +25,8 @@ jobs:
         run: npm audit --audit-level=high
       - name: Core, quota, release-gate and real MCP SDK transport tests
         run: npm test
+      - name: Build and validate the ChatGPT Sites Worker bundle
+        run: npm run build:site
       - name: Worker bundle dry run (no deployment)
         run: npx wrangler deploy --dry-run
   worker-local-d1:

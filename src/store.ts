@@ -122,6 +122,7 @@ export class PageStore {
         this.db.prepare(`UPDATE pages SET state='active',locked_since_s=NULL WHERE state='write_locked' AND locked_since_s<=? AND
           (SELECT COALESCE(SUM(accepted_reads),0) FROM page_hits WHERE path=pages.path AND hour_start_s BETWEEN ? AND ?)<50`).bind(now-12*HOUR,first,hour),
         this.db.prepare('DELETE FROM page_hits WHERE hour_start_s<?').bind(hour-72*HOUR),
+        this.db.prepare('DELETE FROM request_limits WHERE window_start_s<?').bind(now-3600),
         this.db.prepare('DELETE FROM tombstones WHERE blocked_until_s<=?').bind(now)
       ]);
     } catch(e) { throw dbError(e); }
