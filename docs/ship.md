@@ -1,12 +1,14 @@
-# Shipping MemDB 0.1.0
+# Shipping MEMDB 0.1.0
 
-MemDB is a small anonymous Markdown service, not durable storage. All UI and developer-facing copy are English. Unicode page keys and content are still accepted. No login, bot identifier, public index or dashboard is required.
+**This file documents the existing Cloudflare Workers deployment.** For the user's chosen ChatGPT Sites hosting through Work, read [`work-sites-handoff.md`](work-sites-handoff.md) and adapt the runtime before deployment. The repository is not yet a verified Sites deployment.
+
+MEMDB is a small anonymous Markdown service, not durable storage. All UI and developer-facing copy are English. Unicode page keys and content are still accepted. No login, bot identifier, public index or dashboard is required.
 
 ## What is ready
 
 The source contains browser editing and rendering, REST, modern and legacy MCP paths, database-enforced quota accounting, atomic Policy C reclamation, freeze periods and bounded maintenance. The release adds real HTTPS browser CI, modern wire-client regression tests, stricter sibling-origin protection and a configuration-checked deployment pipeline.
 
-A passing source build is not proof that a Cloudflare service is running. The `Deploy MemDB` workflow is manual-only. Neither a merge nor a push deploys to production. The repository does not contain credentials or a real production database ID.
+A passing source build is not proof that a Cloudflare service is running. The `Deploy MEMDB` workflow is manual-only. Neither a merge nor a push deploys to production. The repository does not contain credentials or a real production database ID.
 
 ## One-time owner setup
 
@@ -36,9 +38,9 @@ Do not paste the API token into chat or commit it. Assign minimum token permissi
 
 ## Deploy
 
-After the latest main-branch CI succeeds, open **Actions -> Deploy MemDB -> Run workflow**, choose `main`, and confirm both public-write and budget choices. The workflow validates settings, runs tests, builds, applies non-destructive migrations, deploys and runs four read-only HTTPS/MCP probes. It stops on a missing setting, failed migration or failed command.
+After the latest main-branch CI succeeds, open **Actions -> Deploy MEMDB -> Run workflow**, choose `main`, and confirm both public-write and budget choices. The workflow validates settings, runs tests, builds, applies non-destructive migrations, deploys and runs four read-only HTTPS/MCP probes. It stops on a missing setting, failed migration or failed command.
 
-The application URLs are your configured origin plus `/`, `/p/<path>`, `/raw/<path>` and `/mcp`. A successful deploy prints the actual Worker URL. Do not substitute the example URL for an observed deployment URL.
+Human visitors always open `/` and type a page key to load Markdown in the same screen; `/p/<path>` now redirects to `/`. Programmatic interfaces remain `/raw/<path>`, `/api/pages/<path>` and `/mcp`. A successful deploy prints the actual Worker URL. Do not substitute the example URL for an observed deployment URL.
 
 To deploy from a Linux/Node.js 22 workstation instead, set the same variables and these explicit acknowledgments:
 

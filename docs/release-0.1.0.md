@@ -1,4 +1,6 @@
-# MemDB 0.1.0 verification and release notes
+# MEMDB 0.1.0 verification and release notes
+
+**UI update (2026-10-28):** Human visitors now open only `/`, type a page key and edit Markdown inline; `/p/<path>` redirects to the root. The browser URL is never used to select a page. The MCP and REST identifiers remain unchanged. See GitHub PR #3 for tests and merge evidence.
 
 ## Scope
 

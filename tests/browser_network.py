@@ -125,7 +125,7 @@ class NetworkTests(unittest.TestCase):
         self.page.locator('#open-button').click()
         expect(self.page.locator('#page-title')).to_have_text(self.path + '/second')
         expect(self.page.locator('#markdown')).to_have_value('Unsaved draft')
-        expect(self.page.locator('#path')).to_have_value(self.path)
+        expect(self.page.locator('#path')).to_have_value(self.path + '/second')
 
     def test_foreign_origin_and_same_site_fetch_rejected(self):
         self.open_page()

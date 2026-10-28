@@ -1,4 +1,4 @@
-name: MemDB CI
+name: MEMDB CI
 on:
   push:
     branches: [main, 'feat/**']

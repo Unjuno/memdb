@@ -1,6 +1,6 @@
 # Security model
 
-MemDB is intentionally anonymous, world-readable and world-writable temporary storage. It is not a private knowledge store. Anyone who reaches a path can change its content; accepted reads can induce locks and deletion. No identity system or anti-abuse mechanism makes that safe for irreplaceable data.
+MEMDB is intentionally anonymous, world-readable and world-writable temporary storage. It is not a private knowledge store. Anyone who reaches a path can change its content; accepted reads can induce locks and deletion. No identity system or anti-abuse mechanism makes that safe for irreplaceable data.
 
 ## Implemented boundaries
 

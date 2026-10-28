@@ -1,4 +1,4 @@
-# MemDB
+# MEMDB
 
 A small anonymous Markdown wiki and temporary shared memory for humans and AI agents.
 
@@ -6,7 +6,7 @@ A small anonymous Markdown wiki and temporary shared memory for humans and AI ag
 
 ## Use a path, not an account
 
-A string such as `research/experiment-01` identifies a page. Humans open `/p/research/experiment-01`; agents use the same path through MCP at `/mcp`. A page is allocated only on its first successful save.
+A string such as `research/experiment-01` identifies a page. Humans open the **site homepage `/`**, enter that key and press **Open**; the Markdown editor appears on the **same page without changing the browser URL**. Agents use the same key through MCP at `/mcp`. A page is allocated only on its first successful save.
 
 There are no accounts, passwords, bot identifiers, public page directory, dashboard or language switch. The interface, errors and documentation are English. Page paths and content can contain Unicode.
 
@@ -31,7 +31,7 @@ Open `http://127.0.0.1:8787/`. The local MCP endpoint is `http://127.0.0.1:8787/
 
 | Interface | Operation |
 | --- | --- |
-| `/p/<path>` | View, edit, preview and save Markdown |
+| `/` | Enter a page key; view, edit, preview, save or switch pages without URL navigation |
 | `GET /raw/<path>` | Read Markdown source; counts as a read |
 | `GET /api/pages/<path>` | Read content, rendered HTML and revision |
 | `PUT /api/pages/<path>` | Save `{markdown, expected_version}` |
@@ -49,12 +49,18 @@ High-use pages become locked and eventually eligible for deletion. Old, low-use 
 
 Default limits are 32 KiB of UTF-8 Markdown per page, 128 MiB total Markdown, and 10,000 pages. Logical limits do not include database indexes, metadata or provider billing. Rate limits are shared by operation/path and use Cloudflare's edge limiter, not authenticated identity or a strict worldwide billing cap. See [architecture](docs/architecture.md) and [operations](docs/runbook.md).
 
+Existing `/p/<path>` browser URLs redirect to `/` for compatibility; page keys are **not** encoded in a user-facing URL or a fragment. API and raw-source paths are internal/programmatic interfaces only.
+
 The renderer supports basic headings, lists, code, emphasis and safe links. It does not implement full CommonMark/GFM, tables, images or executable HTML. The editor has no autosave; it preserves a local draft when a save conflicts.
+
+## Work / ChatGPT Sites deployment
+
+For the planned ChatGPT Sites deployment, use [the Work handoff](docs/work-sites-handoff.md). The checked-in runtime currently targets Cloudflare Workers and D1; it must be adapted and verified against the actual Sites runtime rather than assumed portable. Site-specific quotas and public MCP exposure require verification in Work.
 
 ## Verification and deployment
 
 CI checks the core/SQL/HTTP/security rules, actual MCP SDK, local Wrangler+D1, Chromium over real loopback HTTPS, TypeScript build and dependency advisories. It includes 49 core tests, 8 MCP tests, 17 Worker checks and 5 browser-network tests. See the [release evidence](docs/release-0.1.0.md); results are tied to specific commits.
 
-Production uses a manual workflow: validate the exact generated configuration, test, build, migrate remote D1, deploy, then run bounded read-only HTTPS/MCP probes. The owner supplies a Cloudflare token and four environment variables. Missing credentials or unsafe configuration stop the process. See [Ship MemDB](docs/ship.md) and the [release checklist](docs/release-checklist.md).
+Production uses a manual workflow: validate the exact generated configuration, test, build, migrate remote D1, deploy, then run bounded read-only HTTPS/MCP probes. The owner supplies a Cloudflare token and four environment variables. Missing credentials or unsafe configuration stop the process. See [Ship MEMDB](docs/ship.md) and the [release checklist](docs/release-checklist.md).
 
 No independent security audit, production load test or durable-storage guarantee is claimed. Existing source-license status is unchanged; public repository visibility alone does not grant a reuse license.
