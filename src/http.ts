@@ -22,7 +22,7 @@ function validateOrigin(request: Request, env: Env) {
   if(url.origin!==configured.origin || (origin!==null&&origin!==configured.origin) || (host!==null&&host!==configured.host))throw new AppError('ORIGIN_DENIED');
   const site=request.headers.get('Sec-Fetch-Site');
   // A sibling subdomain is not trusted; reads mutate counters and may cause deletion.
-  if(/^\/(api|raw|mcp)(\/|$)/.test(url.pathname)&&site!==null&&!['same-origin','none'].includes(site))throw new AppError('ORIGIN_DENIED');
+  if(/^\/(api|raw|mcp|mcp-public)(\/|$)/.test(url.pathname)&&site!==null&&!['same-origin','none'].includes(site))throw new AppError('ORIGIN_DENIED');
 }
 async function textBody(request: Request): Promise<string> {
   if(request.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase()!=='application/json')throw new AppError('UNSUPPORTED_MEDIA_TYPE');
@@ -52,7 +52,7 @@ export async function handleRequest(request: Request, env: Env, mcp?: McpHandler
     validateOrigin(request,env);await rate(env.REQUEST_LIMITER,'requests');
     const route=new URL(request.url).pathname;
     let response:Response;
-    if(route==='/mcp') {
+    if(route==='/mcp'||route==='/mcp-public') {
       method(request,['GET','POST','DELETE']);if(!mcp)throw new AppError('CONFIGURATION_ERROR');
       const bounded=request.method==='POST'?new Request(request.url,{method:'POST',headers:request.headers,body:await textBody(request)}):request;
       response=await mcp(bounded,env);

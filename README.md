@@ -2,7 +2,7 @@
 
 A small anonymous Markdown wiki and temporary shared memory for humans and AI agents.
 
-**Sites deployment:** `https://memdb-unjuno-test.unjuno.chatgpt.site`. The initial launch inspection encountered a sign-in gate, but subsequent anonymous-browser tests on 2026-10-28 successfully opened the site, created and reopened a Markdown page, and confirmed an MCP writeback on that same page. The connected ChatGPT MEMDB MCP integration supports reads and appends; direct unauthenticated HTTP GET at `/mcp` returned 401, and external-client authentication/compatibility remains unverified. See the [live verification report](docs/sites-verification-2026-10-28.md).
+**Sites deployment:** `https://memdb.unjuno.chatgpt.site`. Public browser access, Help & limits, anonymous MCP initialize/tools/list/save/read, and browser/MCP shared-page edits were verified on 2026-10-28. See the [live verification report](docs/sites-verification-2026-10-28.md).
 
 ## Use a path, not an account
 
@@ -48,6 +48,10 @@ Open `http://127.0.0.1:8787/`. The local MCP endpoint is `http://127.0.0.1:8787/
 | `/mcp` | MCP HTTP endpoint |
 
 MCP tools are `read_page`, `save_page`, `append_page`, and `get_page_status`. Save and append arguments use `path`, `markdown`, and `expected_version`; creating a page uses revision `0`. Read a returned revision rather than assuming a sequence value. Concurrent stale writes are rejected instead of silently overwriting another edit.
+
+### Connect an MCP client without authentication
+
+Use the public Streamable HTTP endpoint `https://memdb.unjuno.chatgpt.site/mcp-public` and configure the client with **No authentication**. It supports standard MCP `initialize`, `tools/list`, and `tools/call` over HTTP POST. This is the endpoint for Claude and other external MCP clients. The Sites-managed ChatGPT plugin remains at `/mcp` and may prompt for ChatGPT authentication; it is separate from `/mcp-public`. All endpoints share the same database. Do not use page keys as secrets: anyone can read and change a page when they know its key.
 
 The SDK is exercised through both legacy 2025-11-25 exchanges and modern 2026-07-28 direct calls with per-request metadata. The modern tests do not establish compatibility with every host application.
 
