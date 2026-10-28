@@ -1,6 +1,6 @@
 # Operator runbook (English-only; not a public dashboard)
 
-MemDB is an anonymous, **publicly writable and non-durable** Markdown wiki. Anyone who learns a path can edit it. Read traffic drives lock/eviction eligibility; an attacker can intentionally trigger deletion. It is not suitable for private information, essential records, or guaranteed retention. Keep the project on a test-only origin until the release checklist is satisfied.
+MEMDB is an anonymous, **publicly writable and non-durable** Markdown wiki. Anyone who learns a path can edit it. Read traffic drives lock/eviction eligibility; an attacker can intentionally trigger deletion. It is not suitable for private information, essential records, or guaranteed retention. Keep the project on a test-only origin until the release checklist is satisfied.
 
 ## Preconditions
 

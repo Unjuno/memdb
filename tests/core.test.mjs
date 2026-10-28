@@ -117,19 +117,39 @@ function req(path, method='GET', body, headers={}) {
 }
 test('HTTP handler exists',()=>assert.equal(typeof http.handleRequest,'function'));
 test('browser shell allocates no page; CSP and no public listing',async()=>{
-  const db=new LocalD1(),e=env(db); const res=await http.handleRequest(req('/p/new'),e);
+  const db=new LocalD1(),e=env(db); const res=await http.handleRequest(req('/'),e);
   assert.equal(res.status,200); assert.match(res.headers.get('content-security-policy'),/script-src 'self'/);
   assert.match(await res.text(),/textarea/); assert.equal(rows(db,'pages').length,0);
   assert.equal((await http.handleRequest(req('/api/pages'),e)).status,404); db.close();
 });
+test('MEMDB opens human page keys inline on root without URL navigation', async () => {
+  const db = new LocalD1(), e = env(db);
+  const home = await http.handleRequest(req('/'), e);
+  const html = await home.text();
+  const script = await (await http.handleRequest(req('/assets/app.js'), e)).text();
+  assert.equal(home.status, 200);
+  assert.match(html, /<title>MEMDB<\/title>/);
+  assert.match(html, /<header><a href=\"\/\">MEMDB<\/a>/);
+  assert.match(html, /<form id=\"open\">/);
+  assert.match(html, /<section id=\"workspace\"[^>]* hidden/);
+  assert.match(html, /id=\"markdown\"/);
+  assert.match(script, /activePath/);
+  assert.doesNotMatch(script, /location\.assign|history\.pushState|location\.hash/);
+  assert.equal(rows(db, 'pages').length, 0);
+  const legacy = await http.handleRequest(req('/p/legacy-key'), e);
+  assert.equal(legacy.status, 302);
+  assert.equal(legacy.headers.get('location'), '/');
+  db.close();
+});
+
 test('browser UI and client feedback are English-only', async () => {
   const db = new LocalD1(), e = env(db);
   const home = await (await http.handleRequest(req('/'), e)).text();
-  const page = await (await http.handleRequest(req('/p/research/experiment-01'), e)).text();
+  const page = await (await http.handleRequest(req('/'), e)).text();
   const script = await (await http.handleRequest(req('/assets/app.js'), e)).text();
   assert.match(home, /<html lang="en">/);
   assert.match(home, /Open a page/);
-  assert.match(home, /Page path/);
+  assert.match(home, /Page key/);
   assert.match(home, /Anyone can read and edit/);
   assert.match(page, /Markdown content/);
   assert.match(page, /Reload \(counts as a read\)/);

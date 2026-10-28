@@ -38,9 +38,14 @@ class NetworkTests(unittest.TestCase):
 
     def open_page(self, path=None):
         path = path or self.path
-        response = self.page.goto(self.origin + '/p/' + quote(path, safe='/'))
+        response = self.page.goto(self.origin + '/')
         self.assertEqual(response.status, 200)
+        expect(self.page.locator('#workspace')).to_be_hidden()
+        self.page.locator('#path').fill(path)
+        self.page.locator('#open-button').click()
         expect(self.page.locator('#status')).to_have_text('This page does not exist yet.')
+        expect(self.page.locator('#page-title')).to_have_text(path)
+        self.assertEqual(self.page.url, self.origin + '/')
         return response
 
     def save(self, text):
@@ -61,6 +66,9 @@ class NetworkTests(unittest.TestCase):
         self.page.locator('#save').click()
         expect(self.page.locator('#status')).to_have_text('Saved successfully.')
         self.page.reload()
+        expect(self.page.locator('#workspace')).to_be_hidden()
+        self.page.locator('#path').fill(self.path)
+        self.page.locator('#open-button').click()
         expect(self.page.locator('#status')).to_have_text('Page loaded.')
         expect(self.page.locator('#preview strong')).to_have_text('saved')
         self.assertIsNone(self.page.evaluate('window.pwned'))
@@ -95,11 +103,29 @@ class NetworkTests(unittest.TestCase):
         self.page.locator('#path').fill(path)
         self.page.get_by_role('button', name='Open', exact=True).click()
         expect(self.page.locator('#status')).to_contain_text('does not exist yet')
+        self.assertEqual(self.page.url, self.origin + '/')
+        expect(self.page.locator('#page-title')).to_have_text(path)
         self.save('Unicode path works')
         response = self.context.request.get(self.origin + '/raw/' + quote(path, safe='/'))
         self.assertEqual(response.status, 200)
         self.assertEqual(response.text(), 'Unicode path works')
         self.assertIn('text/markdown', response.headers['content-type'])
+
+    def test_switch_keys_in_place_and_reject_discarding_draft(self):
+        self.open_page()
+        self.save('# First')
+        self.page.locator('#path').fill(self.path + '/second')
+        self.page.locator('#open-button').click()
+        expect(self.page.locator('#status')).to_have_text('This page does not exist yet.')
+        expect(self.page.locator('#markdown')).to_have_value('')
+        self.assertEqual(self.page.url, self.origin + '/')
+        self.page.locator('#markdown').fill('Unsaved draft')
+        self.page.locator('#path').fill(self.path)
+        self.page.once('dialog', lambda dialog: dialog.dismiss())
+        self.page.locator('#open-button').click()
+        expect(self.page.locator('#page-title')).to_have_text(self.path + '/second')
+        expect(self.page.locator('#markdown')).to_have_value('Unsaved draft')
+        expect(self.page.locator('#path')).to_have_value(self.path + '/second')
 
     def test_foreign_origin_and_same_site_fetch_rejected(self):
         self.open_page()

@@ -57,8 +57,7 @@ class BrowserTests(unittest.TestCase):
             return response.code, response.read().decode('utf-8'), dict(response.headers)
 
     def _open_ui(self, path):
-        source = '/p/'+quote(path,safe='/') if path else '/'
-        status,html,_=self._request(source)
+        status,html,_=self._request('/')
         assert status==200,(status,html)
         self.page.set_content(html.replace('<script src="/assets/app.js" defer></script>',''))
         def backend(path,method='GET',body=None,headers=None):
@@ -71,6 +70,10 @@ class BrowserTests(unittest.TestCase):
         }}''')
         code=self._request('/assets/app.js')[1]
         self.page.add_script_tag(content=code)
+        if path:
+            self.page.locator('#path').fill(path)
+            self.page.locator('#open-button').click()
+            expect(self.page.locator('#page-title')).to_have_text(path)
 
     def test_create_preview_reload_and_escaping(self):
         self._open_ui('qa/research')
@@ -116,6 +119,29 @@ class BrowserTests(unittest.TestCase):
         expect(self.page.locator('#status')).to_have_text('Saved successfully.')
         code,content,_=self._request('/raw/'+quote(path,safe='/'))
         assert code==200 and content=='Café'
+
+    def test_inline_key_switch_without_navigation(self):
+        self._open_ui(None)
+        original_url = self.page.url
+        expect(self.page.locator('#workspace')).to_be_hidden()
+        self.page.locator('#path').fill('qa/key-a')
+        self.page.locator('#open-button').click()
+        expect(self.page.locator('#status')).to_have_text('This page does not exist yet.')
+        self.page.locator('#markdown').fill('# First')
+        self.page.locator('#save').click()
+        expect(self.page.locator('#status')).to_have_text('Saved successfully.')
+        self.page.locator('#path').fill('qa/key-b')
+        self.page.locator('#open-button').click()
+        expect(self.page.locator('#status')).to_have_text('This page does not exist yet.')
+        expect(self.page.locator('#markdown')).to_have_value('')
+        assert self.page.url == original_url
+        self.page.locator('#markdown').fill('Draft without save')
+        self.page.locator('#path').fill('qa/key-a')
+        self.page.once('dialog', lambda d: d.dismiss())
+        self.page.locator('#open-button').click()
+        expect(self.page.locator('#page-title')).to_have_text('qa/key-b')
+        expect(self.page.locator('#markdown')).to_have_value('Draft without save')
+        expect(self.page.locator('#path')).to_have_value('qa/key-b')
 
     def test_home_is_english_and_encodes_path(self):
         self._open_ui(None)

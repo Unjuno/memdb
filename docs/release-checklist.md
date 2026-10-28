@@ -22,7 +22,7 @@ Source readiness and live deployment are separate states. See `docs/ship.md` for
 - [ ] Set the four production environment variables in `docs/ship.md`.
 - [ ] Check the actual plan, provider spending controls and private operational monitoring.
 - [ ] Validate remote D1 and public HTTPS on an authorized staging instance. Do not run capacity fixtures on production.
-- [ ] Run Deploy MemDB on a passing main commit and inspect the returned live URL and read-only probes.
+- [ ] Run Deploy MEMDB on a passing main commit and inspect the returned live URL and read-only probes. When choosing ChatGPT Sites, use the Work handoff instead of running the Cloudflare-specific workflow as-is.
 - [ ] Verify recovery and physical database usage with the expected workload before relying on public operation.
 
 ## Deliberate limits
