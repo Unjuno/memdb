@@ -142,6 +142,28 @@ test('MEMDB opens human page keys inline on root without URL navigation', async 
   db.close();
 });
 
+test('MEMDB help explains keys, saves, limits, privacy and MCP without reading pages', async () => {
+  const db = new LocalD1(), e = env(db);
+  const home = await http.handleRequest(req('/'), e);
+  const html = await home.text();
+  const css = await (await http.handleRequest(req('/assets/style.css'), e)).text();
+  assert.equal(home.status, 200);
+  assert.match(html, /id="quickstart"/);
+  assert.match(html, /<details id="help" class="help">/);
+  assert.match(html, /<summary>Help &amp; limits<\/summary>/);
+  assert.match(html, /<h2>How MEMDB works<\/h2>/);
+  assert.match(html, /256 bytes \(UTF-8\)/);
+  assert.match(html, /8 segments/);
+  assert.match(html, /32 KiB/);
+  assert.match(html, /not passwords/i);
+  assert.match(html, /<code>read_page<\/code>/);
+  assert.match(html, /<code>append_page<\/code>/);
+  assert.match(css, /#help/);
+  assert.equal(rows(db, 'pages').length, 0);
+  assert.equal(rows(db, 'page_hits').length, 0);
+  db.close();
+});
+
 test('browser UI and client feedback are English-only', async () => {
   const db = new LocalD1(), e = env(db);
   const home = await (await http.handleRequest(req('/'), e)).text();
