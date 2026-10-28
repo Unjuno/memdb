@@ -2,7 +2,7 @@
 
 ## Deployment
 
-- Site: <https://memdb-unjuno-test.unjuno.chatgpt.site>
+- Site: <https://memdb.unjuno.chatgpt.site> (slug changed in place; old URL redirect not confirmed).
 - Site audience setting: `public` (confirmed by Sites access state).
 - Latest deployment: succeeded at the URL above.
 - Runtime: Sites Worker with the D1 binding `DB`; no separate Cloudflare account was used.
@@ -14,7 +14,7 @@ The initial clean browser sign-in gate recorded below was **not the final public
 
 From a connected MEMDB MCP integration, `get_page_status` returned version 2 for that test key, `read_page` returned the browser-created Markdown and `append_page` with an explicit expected revision advanced the page to version 3 (156 bytes). A separate anonymous-browser inspection then showed the MCP-appended marker in both preview and editing text, with version 3 and 156 B displayed. No other page keys were accessed or modified by this cross-interface test.
 
-Anonymous GET `/mcp` responded HTTP 401; this does **not** demonstrate failure of authenticated or POST-based MCP clients. The connected ChatGPT MEMDB plugin is verified, but external MCP client interoperability still requires its own authentication-aware test.
+The Sites-managed `/mcp` route requires OAuth. A separate public alias `/mcp-public` is configured without authentication. On 2026-10-28 unauthenticated POST requests to `/mcp-public` successfully completed `initialize`, `tools/list`, `tools/call(save_page)` and `tools/call(read_page)` using the dedicated key `verification/anon-mcp-20261028`. A named Claude UI was not directly tested; the protocol exchange itself was verified against the deployed endpoint.
 
 This follow-up validates real anonymous browser writing and connected MCP read/write exchange, not 8 GB capacity exhaustion, distributed rate limits, mobile UX or a third-party security audit.
 
