@@ -14,11 +14,13 @@ The only human editor URL is `/`. The user enters an arbitrary page key, presses
 
 `migrations/0001_initial.sql` is the approved quota/hit/freeze schema. `0002_revision_clock.sql` adds a persistent revision sequence. Without it, deletion and recreation reset version to 1 and let an old editor overwrite the new generation (ABA bug). Revisions may skip numbers; clients must send the returned value rather than increment it themselves. Fresh installation must apply both migrations. Downgrading to the old reference writer is unsupported.
 
+The Sites entry point `src/sites.ts` reuses the same HTTP, MCP, Markdown and storage code. Sites does not provide this Worker with Cloudflare-specific rate-limit bindings or cron triggers. The adapter uses atomic D1 upserts for fixed-window rate limits, hashes limiter keys, and claims a persisted maintenance lease no more than once per five minutes. Housekeeping remains bounded by the existing 100-page GC batch. Sites migrates the same schema through Drizzle-compatible D1 migrations. Its 8,000,000,000-byte logical content cap reserves 20% below the documented 10 GB per-Site database ceiling for indexes, hit buckets, tombstones and SQLite overhead. Physical overhead is not reported by the Sites database inspection API, so this reserve is an estimate.
+
 ## Policy C
 
 On creation, preflight computes both byte and page-count shortages and selects at most eight eligible hot victims. If insufficient, return STORAGE_FULL without writes. A D1 transactional batch rechecks each victim and present quota pressure, deletes only when still necessary, and inserts the new page. Triggers enforce quota and freeze deleted paths. Any failed statement rolls the batch back, including hit deletion and tombstones. A quota race permits at most two attempts. Existing updates never invoke reclamation.
 
-Normal GC evaluates the two completed UTC days independently, deletes at most 100 pages per run, adjusts locks, removes old hit buckets, and clears expired tombstones. The schedule is five minutes. Store time is trusted server time, never a tool argument. Byte counts use UTF-8, timestamps use Unix seconds, hit/page counts are integers; logical byte accounting does not measure physical storage.
+Normal GC evaluates the two completed UTC days independently, deletes at most 100 pages per run, adjusts locks, removes old hit buckets, and clears expired tombstones. The Cloudflare schedule is five minutes; Sites runs the same work on the first request after its persisted five-minute lease expires. Store time is trusted server time, never a tool argument. Byte counts use UTF-8, timestamps use Unix seconds, hit/page counts are integers; logical byte accounting does not measure physical storage.
 
 ## Decisions replacing ambiguous draft details
 

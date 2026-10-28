@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793145600000,
+      "tag": "0000_memdb_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793145900000,
+      "tag": "0001_sites_capacity",
+      "breakpoints": true
+    }
+  ]
+}

@@ -9,8 +9,9 @@
   "scripts": {
     "dev": "wrangler dev --ip 127.0.0.1",
     "build": "tsc -p tsconfig.json",
+    "build:site": "node scripts/build-site.mjs",
     "test:core": "tsc -p tsconfig.core.json && node --experimental-sqlite --test tests/core.test.mjs tests/reliability.test.mjs tests/release.test.mjs tests/security.test.mjs tests/deployment.test.mjs",
-    "test:mcp": "npm run build && node --experimental-sqlite --test tests/mcp.test.mjs tests/mcp-modern.test.mjs",
+    "test:mcp": "npm run build && node --experimental-sqlite --test tests/mcp.test.mjs tests/mcp-modern.test.mjs tests/sites-runtime.test.mjs",
     "test": "npm run test:core && npm run test:mcp",
     "db:local": "wrangler d1 migrations apply memdb --local",
     "check:release": "node scripts/check-release.mjs",
@@ -26,6 +27,7 @@
     "zod": "^4.2.0"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "typescript": "5.8.3",
     "wrangler": "^4.0.0"
   }

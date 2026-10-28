@@ -1,0 +1,2 @@
+-- Sites documents a per-Site D1 maximum of 10 GB. Reserve 20% for SQLite metadata, indexes, hit buckets and tombstones.
+UPDATE usage_quota SET max_pages=244140, max_content_bytes=8000000000 WHERE id=1;

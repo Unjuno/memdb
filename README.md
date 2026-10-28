@@ -2,7 +2,7 @@
 
 A small anonymous Markdown wiki and temporary shared memory for humans and AI agents.
 
-**The application and release pipeline are implemented. No public service URL has been provisioned by this repository.** See [shipping instructions](docs/ship.md) for the one-time Cloudflare setup. Pushes and merges do not deploy automatically.
+**Sites deployment:** `https://memdb-unjuno-test.unjuno.chatgpt.site`. On 2026-10-28 the Site audience was set to public and deployment succeeded, but a clean browser still received a Sites sign-in gate. Anonymous browser access is not confirmed; see the [live verification report](docs/sites-verification-2026-10-28.md). The app and D1 database exist, and the Sites MCP plugin has been exercised from ChatGPT.
 
 ## Use a path, not an account
 
@@ -47,7 +47,7 @@ The SDK is exercised through both legacy 2025-11-25 exchanges and modern 2026-07
 
 High-use pages become locked and eventually eligible for deletion. Old, low-use pages are not removed simply because they are old. When a new page exceeds quota, eligible high-use pages can be reclaimed only in the same transaction as the new save. If sufficient capacity cannot be reclaimed, the save is rejected without deleting pages. Deleted paths are frozen for seven days.
 
-Default limits are 32 KiB of UTF-8 Markdown per page, 128 MiB total Markdown, and 10,000 pages. Logical limits do not include database indexes, metadata or provider billing. Rate limits are shared by operation/path and use Cloudflare's edge limiter, not authenticated identity or a strict worldwide billing cap. See [architecture](docs/architecture.md) and [operations](docs/runbook.md).
+Default Cloudflare limits are 32 KiB per page, 128 MiB total Markdown and 10,000 pages. The Sites deployment uses the documented 10 GB per-Site database ceiling as a maximum, reserves 20% for indexes, hit buckets and metadata, and caps logical page content at 8,000,000,000 bytes (8 GB) and 244,140 pages. This is an engineering allowance, not a measurement of physical overhead or a guarantee against account-wide limits. Sites' shared account limits still apply. Sites rate limits store only SHA-256 hashes of limiter keys in D1 and use bounded cleanup. Neither deployment is a strict worldwide billing cap. See [architecture](docs/architecture.md) and [operations](docs/runbook.md).
 
 Existing `/p/<path>` browser URLs redirect to `/` for compatibility; page keys are **not** encoded in a user-facing URL or a fragment. API and raw-source paths are internal/programmatic interfaces only.
 
@@ -55,12 +55,12 @@ The renderer supports basic headings, lists, code, emphasis and safe links. It d
 
 ## Work / ChatGPT Sites deployment
 
-For the planned ChatGPT Sites deployment, use [the Work handoff](docs/work-sites-handoff.md). The checked-in runtime currently targets Cloudflare Workers and D1; it must be adapted and verified against the actual Sites runtime rather than assumed portable. Site-specific quotas and public MCP exposure require verification in Work.
+The ChatGPT Sites deployment uses a bundled Worker, D1 and the Sites-hosted MCP capability. See [the Work handoff](docs/work-sites-handoff.md) for the platform adapter, quota and verification record. The ordinary Cloudflare Worker entry point and edge limiters remain available.
 
 ## Verification and deployment
 
-CI checks the core/SQL/HTTP/security rules, actual MCP SDK, local Wrangler+D1, Chromium over real loopback HTTPS, TypeScript build and dependency advisories. It includes 49 core tests, 8 MCP tests, 17 Worker checks and 5 browser-network tests. See the [release evidence](docs/release-0.1.0.md); results are tied to specific commits.
+`npm test` checks the core/SQL/HTTP/security rules, actual MCP SDK transports, and Sites migrations and limiter. The latest local run passed 50 core tests and 10 MCP/Sites-runtime tests. The deployed Sites MCP plugin was also used to save and read a Unicode-keyed page. Wrangler local Worker launch and browser automation were blocked in this environment; the exact results are in the [live verification report](docs/sites-verification-2026-10-28.md).
 
-Production uses a manual workflow: validate the exact generated configuration, test, build, migrate remote D1, deploy, then run bounded read-only HTTPS/MCP probes. The owner supplies a Cloudflare token and four environment variables. Missing credentials or unsafe configuration stop the process. See [Ship MEMDB](docs/ship.md) and the [release checklist](docs/release-checklist.md).
+The current hosted instance is on ChatGPT Sites. [Ship MEMDB](docs/ship.md) documents the separate legacy Cloudflare workflow and is not used for this deployment. See the [release checklist](docs/release-checklist.md) for remaining public-access and external-client verification.
 
 No independent security audit, production load test or durable-storage guarantee is claimed. Existing source-license status is unchanged; public repository visibility alone does not grant a reuse license.
