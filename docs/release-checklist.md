@@ -15,8 +15,8 @@
 
 ## Still required before claiming the requested public release is verified
 
-- [ ] Resolve why the deployed public URL still displays a Sites sign-in gate in a clean browser. Do not ask visitors to log in; OpenAI's public Sites guidance says public sites should open without ChatGPT sign-in.
-- [ ] Verify the human UI on the actual public HTTPS origin: save, reopen, switch keys without URL changes, preview, draft confirmation, Unicode and concurrent edit conflict.
+- [x] Anonymous public access is now observed. Browser-created Markdown survived reload, and connected MEMDB MCP read/append changes were confirmed in the browser (follow-up verification on 2026-10-28).
+- [ ] Finish full public-HTTPS UX regression: key switching, drafts/conflicts, Unicode and mobile layout. Anonymous save/reopen and MCP writeback were already observed; the remaining flows need direct public-host testing.
 - [ ] Verify mobile layout and application security headers on the public origin.
 - [ ] Test the MCP URL from an external AI client. ChatGPT's Sites-generated plugin works; external transport compatibility remains unverified.
 - [ ] Inspect physical D1 usage and account-specific remaining storage from Sites settings; the available database connector does not report physical bytes.

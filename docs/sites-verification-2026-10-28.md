@@ -8,6 +8,16 @@
 - Runtime: Sites Worker with the D1 binding `DB`; no separate Cloudflare account was used.
 - MCP: the Sites-generated ChatGPT plugin exposed `read_page`, `save_page`, `append_page`, and `get_page_status` in this conversation.
 
+## Follow-up public cross-interface verification (2026-10-28)
+
+The initial clean browser sign-in gate recorded below was **not the final public-access state**. Subsequently, an independent anonymous browser session reached the live MEMDB homepage and created one new test page, saved 123 bytes and reopened it from the same fixed homepage URL. The stored marker was still present after a full browser reload.
+
+From a connected MEMDB MCP integration, `get_page_status` returned version 2 for that test key, `read_page` returned the browser-created Markdown and `append_page` with an explicit expected revision advanced the page to version 3 (156 bytes). A separate anonymous-browser inspection then showed the MCP-appended marker in both preview and editing text, with version 3 and 156 B displayed. No other page keys were accessed or modified by this cross-interface test.
+
+Anonymous GET `/mcp` responded HTTP 401; this does **not** demonstrate failure of authenticated or POST-based MCP clients. The connected ChatGPT MEMDB plugin is verified, but external MCP client interoperability still requires its own authentication-aware test.
+
+This follow-up validates real anonymous browser writing and connected MCP read/write exchange, not 8 GB capacity exhaustion, distributed rate limits, mobile UX or a third-party security audit.
+
 ## Database and storage
 
 - Sites documentation states a maximum of 10 GB per Site database. Account-wide usage and plan limits still apply.

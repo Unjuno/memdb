@@ -74,6 +74,23 @@ class NetworkTests(unittest.TestCase):
         self.assertIsNone(self.page.evaluate('window.pwned'))
         self.page.screenshot(path='artifacts/browser-network.png', full_page=True)
 
+    def test_help_is_accessible_without_changing_key_or_reading_pages(self):
+        requests = []
+        self.page.on('request', lambda request: requests.append(request.url))
+        response = self.page.goto(self.origin + '/')
+        self.assertEqual(response.status, 200)
+        expect(self.page.locator('#help')).to_be_visible()
+        expect(self.page.get_by_role('heading', name='How MEMDB works')).to_be_hidden()
+        self.page.locator('#help summary').focus()
+        self.page.keyboard.press('Enter')
+        expect(self.page.get_by_role('heading', name='How MEMDB works')).to_be_visible()
+        expect(self.page.get_by_text('256 bytes (UTF-8)', exact=False)).to_be_visible()
+        expect(self.page.locator('#help').get_by_text('32 KiB', exact=False)).to_be_visible()
+        self.assertEqual(self.page.url, self.origin + '/')
+        self.assertFalse(any('/api/pages/' in u or '/raw/' in u for u in requests))
+        self.page.locator('#help summary').click()
+        expect(self.page.get_by_role('heading', name='How MEMDB works')).to_be_hidden()
+
     def test_real_browser_csp_rejects_inline_script(self):
         self.open_page()
         self.page.evaluate("""() => {
