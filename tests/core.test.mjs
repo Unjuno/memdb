@@ -158,7 +158,7 @@ test('MEMDB help explains keys, saves, limits, privacy and MCP without reading p
   assert.match(html, /not passwords/i);
   assert.match(html, /<code>read_page<\/code>/);
   assert.match(html, /<code>append_page<\/code>/);
-  assert.match(css, /#help/);
+  assert.match(css, /\.help summary/);
   assert.equal(rows(db, 'pages').length, 0);
   assert.equal(rows(db, 'page_hits').length, 0);
   db.close();
