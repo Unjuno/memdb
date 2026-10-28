@@ -19,10 +19,11 @@ function validateOrigin(request: Request, env: Env) {
   if(configured.origin!==env.PUBLIC_ORIGIN || !['http:','https:'].includes(configured.protocol))throw new AppError('CONFIGURATION_ERROR');
   if(configured.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(configured.hostname))throw new AppError('CONFIGURATION_ERROR');
   const url=new URL(request.url),origin=request.headers.get('Origin'),host=request.headers.get('Host');
-  if(url.origin!==configured.origin || (origin!==null&&origin!==configured.origin) || (host!==null&&host!==configured.host))throw new AppError('ORIGIN_DENIED');
+  const publicMcp=url.pathname==='/mcp-public';
+  if(url.origin!==configured.origin || (!publicMcp&&origin!==null&&origin!==configured.origin) || (host!==null&&host!==configured.host))throw new AppError('ORIGIN_DENIED');
   const site=request.headers.get('Sec-Fetch-Site');
   // A sibling subdomain is not trusted; reads mutate counters and may cause deletion.
-  if(/^\/(api|raw|mcp|mcp-public)(\/|$)/.test(url.pathname)&&site!==null&&!['same-origin','none'].includes(site))throw new AppError('ORIGIN_DENIED');
+  if(/^\/(api|raw|mcp)(\/|$)/.test(url.pathname)&&site!==null&&!['same-origin','none'].includes(site))throw new AppError('ORIGIN_DENIED');
 }
 async function textBody(request: Request): Promise<string> {
   if(request.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase()!=='application/json')throw new AppError('UNSUPPORTED_MEDIA_TYPE');
@@ -49,13 +50,16 @@ function pageResponse(result: Awaited<ReturnType<typeof invokeTool>>, status=200
 }
 export async function handleRequest(request: Request, env: Env, mcp?: McpHandler): Promise<Response> {
   try {
-    validateOrigin(request,env);await rate(env.REQUEST_LIMITER,'requests');
     const route=new URL(request.url).pathname;
+    validateOrigin(request,env);await rate(env.REQUEST_LIMITER,'requests');
     let response:Response;
-    if(route==='/mcp'||route==='/mcp-public') {
+    if(route==='/mcp-public'&&request.method==='OPTIONS') {
+      response=new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Accept, MCP-Protocol-Version','Access-Control-Max-Age':'600'}});
+    } else if(route==='/mcp'||route==='/mcp-public') {
       method(request,['GET','POST','DELETE']);if(!mcp)throw new AppError('CONFIGURATION_ERROR');
       const bounded=request.method==='POST'?new Request(request.url,{method:'POST',headers:request.headers,body:await textBody(request)}):request;
       response=await mcp(bounded,env);
+      if(route==='/mcp-public'){const headers=new Headers(response.headers);headers.set('Access-Control-Allow-Origin','*');headers.set('Access-Control-Expose-Headers','MCP-Protocol-Version, Mcp-Session-Id');response=new Response(response.body,{status:response.status,statusText:response.statusText,headers});}
     } else if(route==='/') {
       method(request,['GET']);
       response=new Response(shell(),{headers:{'Content-Type':'text/html; charset=utf-8'}});
