@@ -56,9 +56,12 @@ export async function handleRequest(request: Request, env: Env, mcp?: McpHandler
       method(request,['GET','POST','DELETE']);if(!mcp)throw new AppError('CONFIGURATION_ERROR');
       const bounded=request.method==='POST'?new Request(request.url,{method:'POST',headers:request.headers,body:await textBody(request)}):request;
       response=await mcp(bounded,env);
-    } else if(route==='/' || route.startsWith('/p/')) {
-      method(request,['GET']);const path=route==='/'?undefined:decodePath(route.slice(3));
-      response=new Response(shell(path),{headers:{'Content-Type':'text/html; charset=utf-8'}});
+    } else if(route==='/') {
+      method(request,['GET']);
+      response=new Response(shell(),{headers:{'Content-Type':'text/html; charset=utf-8'}});
+    } else if(route.startsWith('/p/')) {
+      method(request,['GET']);decodePath(route.slice(3));
+      response=new Response(null,{status:302,headers:{'Location':'/'}});
     } else if(route==='/assets/style.css'||route==='/assets/app.js') {
       method(request,['GET']);const css=route.endsWith('.css');
       response=new Response(css?CSS:JS,{headers:{'Content-Type':css?'text/css; charset=utf-8':'text/javascript; charset=utf-8'}});
